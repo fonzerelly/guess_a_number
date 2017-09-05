@@ -1,6 +1,7 @@
 from enum import Enum
 from scratch import ScratchError
 from random import randint
+import logging
 
 class GuessRatings(Enum):
     no_guess = 'no_guess'
@@ -13,6 +14,8 @@ class GuessRatings(Enum):
 
 class GuessANumber:
     def __init__(self, scratch):
+        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+        logging.info('######## Setup GuessANumber Server ########')
         self.scratch = scratch
         self.number_to_guess = 0
 
@@ -38,15 +41,18 @@ class GuessANumber:
     def _handle_guess(self, msg):
         if msg[0] == 'sensor-update' and 'guess' in msg[1].keys():
             try:
-                self.scratch.sensorupdate(
-                    {'guess-rating': self._rate_guess(
-                        self._extract_guess(msg)
-                    )}
+                rating = self._rate_guess(
+                    self._extract_guess(msg)
                 )
+                self.scratch.sensorupdate(
+                    {'guess-rating': rating}
+                )
+                logging.info('guess-rating as ' + str(rating))
             except Exception:
                 self.scratch.sensorupdate(
                     {'guess-rating': GuessRatings.error_guess}
                 )
+                logging.warning('guess-rating as ' + str(GuessRatings.error_guess))
 
     def _handle_reset(self, msg):
         if msg[0] == 'broadcast' and msg[1] == 'reset':
@@ -60,6 +66,7 @@ class GuessANumber:
 
     def reset(self):
         self.random_number()
+        logging.info('Defined number as ' + str(self.number_to_guess))
         self.scratch.sensorupdate({'guess-rating': GuessRatings.no_guess})
 
     def start_game(self):
@@ -68,7 +75,9 @@ class GuessANumber:
 
         while True:
             msg = self.scratch.receive()
+            logging.info('Received Message: ' + str(msg))
             if self._shouldFinish(msg):
+                logging.info('Finished Guess A Number Server')
                 break
 
             self._handle_reset(msg)
