@@ -1,0 +1,10 @@
+*.pyc
+*.*~
+*.swp
+*.swo
+Scripts
+Lib
+Include
+man
+tcl
+pip-selfcheck.json
